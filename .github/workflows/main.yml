@@ -36,29 +36,24 @@ jobs:
         # إنشاء مشروع الأندرويد
         dotnet new mgandroid -n Sonic4Episode1.Android
 
-        # تعديل ملف Sonic4Episode1.csproj بالنصوص المباشرة لإضافة net9.0-android بضمان تام
+        # فرض استهداف netstandard2.0 لمشروع اللعبة الأساسي ليتوافق تماماً مع أندرويد
         python3 -c "
         path = 'Sonic4Episode1/Sonic4Episode1.csproj'
         with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        if '<TargetFrameworks>' in content:
-            if 'net9.0-android' not in content:
-                content = content.replace('</TargetFrameworks>', ';net9.0-android</TargetFrameworks>')
-        elif '<TargetFramework>' in content:
-            import re
-            match = re.search(r'<TargetFramework>(.*?)</TargetFramework>', content)
-            if match:
-                old_tf = match.group(1)
-                new_tfs = f'<TargetFrameworks>{old_tf};net9.0-android</TargetFrameworks>'
-                content = content.replace(match.group(0), new_tfs)
+        import re
+        content = re.sub(r'<TargetFrameworks?>.*?</TargetFrameworks?>', '<TargetFramework>netstandard2.0</TargetFramework>', content, flags=re.DOTALL)
 
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print('Successfully updated Sonic4Episode1.csproj target frameworks.')
+        print('Forced netstandard2.0 on Sonic4Episode1.csproj')
         "
 
-        # ربط المشروعين بعد التعديل الناجح
+        # استعادة الحزم للمشروع الأساسي أولاً
+        dotnet restore Sonic4Episode1/Sonic4Episode1.csproj
+
+        # ربط المشروعين بنجاح تام
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
