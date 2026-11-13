@@ -26,10 +26,15 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Install .NET Android Workload
+    - name: Install .NET Android Workload & MonoGame Templates
       run: |
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
+
+    - name: Create Android Project Structure
+      run: |
+        # إنشاء مشروع أندرويد مؤقت لتوليد الهيكل والملفات
+        dotnet new mgandroid -n Sonic4Episode1.Android
 
     - name: Restore and Build APK
       run: |
