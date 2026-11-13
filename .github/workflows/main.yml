@@ -24,21 +24,21 @@ jobs:
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Install .NET Android Workload & MonoGame Templates
       run: |
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Android Project Structure
+    - name: Create & Configure Android Project
       run: |
-        # إنشاء مشروع أندرويد مؤقت لتوليد الهيكل والملفات
         dotnet new mgandroid -n Sonic4Episode1.Android
+        dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
       run: |
-        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -f net8.0-android
+        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk -p:CheckEolTargetFramework=false
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
