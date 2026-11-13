@@ -39,28 +39,35 @@ jobs:
     - name: Install .NET Android Workload & MonoGame Templates
       run: |
         dotnet workload install android --skip-manifest-update
-        dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Android Project, Fix Frameworks and Reference
+    - name: Create Android Project Manually & Reference Game
       run: |
-        # إنشاء مشروع أندرويد بدون استعادة فورية لتفادي خطأ منصة أندرويد
-        dotnet new mgandroid -n Sonic4Episode1.Android --no-restore
+        # إنشاء مجلد مشروع الأندرويد
+        mkdir -p Sonic4Episode1.Android
 
-        # تعديل إطار العمل في مشروع الأندرويد ليكون net8.0-android وحقن إيقاف فحص EOL
-        python3 -c "
-        path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
-        with open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        content = content.replace('<TargetFramework>net9.0-android</TargetFramework>', '<TargetFramework>net8.0-android</TargetFramework>')
-        content = content.replace('<TargetFrameworks>net9.0-android</TargetFrameworks>', '<TargetFrameworks>net8.0-android</TargetFrameworks>')
-        content = content.replace('<PropertyGroup>', '<PropertyGroup>\n    <CheckEolTargetFramework>false</CheckEolTargetFramework>\n    <SuppressOutOfSupportTargetFrameworkError>true</SuppressOutOfSupportTargetFrameworkError>')
-        
-        with open(path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        " || true
+        # كتابة ملف مشروع الأندرويد يدوياً بصيغة نظيفة ومتوافقة تماماً مع .NET 8 و MonoGame
+        cat << 'EOF' > Sonic4Episode1.Android/Sonic4Episode1.Android.csproj
+        <Project Sdk="Microsoft.NET.Sdk">
+          <PropertyGroup>
+            <TargetFramework>net8.0-android</TargetFramework>
+            <OutputType>Exe</OutputType>
+            <SupportedOSPlatformVersion>21.0</SupportedOSPlatformVersion>
+            <ApplicationId>com.sega.sonic4eps1</ApplicationId>
+            <ApplicationVersion>1</ApplicationVersion>
+            <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+            <CheckEolTargetFramework>false</CheckEolTargetFramework>
+            <SuppressOutOfSupportTargetFrameworkError>true</SuppressOutOfSupportTargetFrameworkError>
+          </PropertyGroup>
+          <ItemGroup>
+            <PackageReference Include="MonoGame.Framework.Android" Version="3.8.2.1105" />
+          </ItemGroup>
+          <ItemGroup>
+            <ProjectReference Include="..\Sonic4Episode1\Sonic4Episode1.csproj" />
+          </ItemGroup>
+        </Project>
+        EOF
 
-        # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 لكي يقبله الأندرويد كمرجع
+        # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 ليتوافق تماماً مع الأندرويد
         python3 -c "
         path = 'Sonic4Episode1/Sonic4Episode1.csproj'
         with open(path, 'r', encoding='utf-8') as f:
@@ -72,9 +79,6 @@ jobs:
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
         " || true
-
-        # ربط المشروعين بعد تعديل الإطارات بنجاح
-        dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
       run: |
