@@ -38,7 +38,6 @@ jobs:
 
     - name: Install .NET Android Workload & MonoGame Templates
       run: |
-        dotnet workload restore
         dotnet workload install android --skip-manifest-update
         dotnet new install MonoGame.Templates.CSharp
 
@@ -74,7 +73,7 @@ jobs:
             f.write(content)
         " || true
 
-        # ربط المشروعين بعد تفعيل حزمة أندرويد
+        # ربط المشروعين
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
