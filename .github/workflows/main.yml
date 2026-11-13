@@ -31,30 +31,18 @@ jobs:
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Android Project & Fix Framework Compatibility
+    - name: Create Unified Android Project & Copy Game Files
       run: |
-        # إنشاء مشروع الأندرويد
+        # إنشاء مشروع أندرويد جديد
         dotnet new mgandroid -n Sonic4Episode1.Android
 
-        # فرض استهداف netstandard2.0 لمشروع اللعبة الأساسي ليتوافق تماماً مع أندرويد
-        python3 -c "
-        path = 'Sonic4Episode1/Sonic4Episode1.csproj'
-        with open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        # نسخ ملفات الكود الخاصة باللعبة (.cs) إلى داخل مشروع الأندرويد ليتم تجميعها مباشرة
+        cp -r Sonic4Episode1/*.cs Sonic4Episode1.Android/ || true
 
-        import re
-        content = re.sub(r'<TargetFrameworks?>.*?</TargetFrameworks?>', '<TargetFramework>netstandard2.0</TargetFramework>', content, flags=re.DOTALL)
-
-        with open(path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        print('Forced netstandard2.0 on Sonic4Episode1.csproj')
-        "
-
-        # استعادة الحزم للمشروع الأساسي أولاً
-        dotnet restore Sonic4Episode1/Sonic4Episode1.csproj
-
-        # ربط المشروعين بنجاح تام
-        dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
+        # إذا كان هناك مجلد Content للعبة، قم بنسخه أيضاً
+        if [ -d "Sonic4Episode1/Content" ]; then
+          cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
+        fi
 
     - name: Restore and Build APK
       run: |
