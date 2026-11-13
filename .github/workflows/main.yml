@@ -38,7 +38,8 @@ jobs:
 
     - name: Install .NET Android Workload & MonoGame Templates
       run: |
-        dotnet workload install android
+        dotnet workload restore
+        dotnet workload install android --skip-manifest-update
         dotnet new install MonoGame.Templates.CSharp
 
     - name: Create Android Project & Reference Game Correctly
@@ -60,7 +61,7 @@ jobs:
             f.write(content)
         " || true
 
-        # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 لكي يقبله الأندرويد كمرجع دون مشاكل تضارب
+        # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 لكي يقبله الأندرويد كمرجع
         python3 -c "
         path = 'Sonic4Episode1/Sonic4Episode1.csproj'
         with open(path, 'r', encoding='utf-8') as f:
@@ -73,7 +74,7 @@ jobs:
             f.write(content)
         " || true
 
-        # ربط مشروع الأندرويد بمشروع اللعبة الأساسي سليماً بكافة تبعاته
+        # ربط المشروعين بعد تفعيل حزمة أندرويد
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
