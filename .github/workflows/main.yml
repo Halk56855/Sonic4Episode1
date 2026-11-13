@@ -36,27 +36,29 @@ jobs:
         # إنشاء مشروع الأندرويد
         dotnet new mgandroid -n Sonic4Episode1.Android
 
-        # استخدام بايثون أو سكربت بسيط لتحديث ملف Sonic4Episode1.csproj ليدعم net9.0-android بصمان تام
+        # تعديل ملف Sonic4Episode1.csproj بالنصوص المباشرة لإضافة net9.0-android بضمان تام
         python3 -c "
-        import xml.etree.ElementTree as ET
-        ET.register_namespace('', 'http://schemas.microsoft.com/developer/msbuild/2003')
-        tree = ET.parse('Sonic4Episode1/Sonic4Episode1.csproj')
-        root = tree.getroot()
-        for prop_group in root.findall('{http://schemas.microsoft.com/developer/msbuild/2003}PropertyGroup'):
-            tf = prop_group.find('{http://schemas.microsoft.com/developer/msbuild/2003}TargetFramework')
-            tfs = prop_group.find('{http://schemas.microsoft.com/developer/msbuild/2003}TargetFrameworks')
-            if tf is not None:
-                tf.tag = 'TargetFrameworks'
-                tf.text = tf.text + ';net9.0-android'
-                break
-            elif tfs is not None:
-                if 'net9.0-android' not in tfs.text:
-                    tfs.text += ';net9.0-android'
-                break
-        tree.write('Sonic4Episode1/Sonic4Episode1.csproj', encoding='utf-8', xml_declaration=True)
-        " || true
+        path = 'Sonic4Episode1/Sonic4Episode1.csproj'
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
 
-        # ربط المشروعين بعد التعديل
+        if '<TargetFrameworks>' in content:
+            if 'net9.0-android' not in content:
+                content = content.replace('</TargetFrameworks>', ';net9.0-android</TargetFrameworks>')
+        elif '<TargetFramework>' in content:
+            import re
+            match = re.search(r'<TargetFramework>(.*?)</TargetFramework>', content)
+            if match:
+                old_tf = match.group(1)
+                new_tfs = f'<TargetFrameworks>{old_tf};net9.0-android</TargetFrameworks>'
+                content = content.replace(match.group(0), new_tfs)
+
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print('Successfully updated Sonic4Episode1.csproj target frameworks.')
+        "
+
+        # ربط المشروعين بعد التعديل الناجح
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
