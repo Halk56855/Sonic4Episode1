@@ -1,0 +1,39 @@
+name: Build Sonic 4 APK
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install .NET Android Workload
+      run: |
+        dotnet workload install android
+        dotnet new install MonoGame.Templates.CSharp
+
+    - name: Restore and Build APK
+      run: |
+        # إذا قمت بإضافة مشروع الأندرويد لاحقاً، استبدل المسار أدناه بمسار مشروعك
+        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -f net8.0-android
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Sonic4-APK
+        path: |
+          **/*.apk
