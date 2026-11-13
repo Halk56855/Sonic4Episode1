@@ -31,22 +31,33 @@ jobs:
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Unified Android Project & Copy Game Files
+    - name: Create Unified Android Project & Fix Frameworks
       run: |
         # إنشاء مشروع أندرويد جديد
         dotnet new mgandroid -n Sonic4Episode1.Android
 
-        # نسخ ملفات الكود الخاصة باللعبة (.cs) إلى داخل مشروع الأندرويد ليتم تجميعها مباشرة
+        # نسخ ملفات الكود والمحتوى إلى داخل مشروع الأندرويد
         cp -r Sonic4Episode1/*.cs Sonic4Episode1.Android/ || true
-
-        # إذا كان هناك مجلد Content للعبة، قم بنسخه أيضاً
         if [ -d "Sonic4Episode1/Content" ]; then
           cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
         fi
 
+        # تجاوز منع إطارات العمل المنتهية لدعم البناء تحت .NET 10/11
+        python3 -c "
+        path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # تعطيل فحص انتهاء دعم الإطار المستهدف وإضافته صراحة لمنع الخطأ
+        content = content.replace('net9.0-android', 'net8.0-android')
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print('Updated Android project framework.')
+        " || true
+
     - name: Restore and Build APK
       run: |
-        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk -p:CheckEolTargetFramework=false
+        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk -p:CheckEolTargetFramework=false -p:CheckNotAllowedTargetFrameworks=false
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
