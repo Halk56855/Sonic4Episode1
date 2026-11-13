@@ -31,7 +31,7 @@ jobs:
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Unified Android Project & Disable EOL Check
+    - name: Create Unified Android Project & Force net8.0-android
       run: |
         # إنشاء مشروع أندرويد جديد
         dotnet new mgandroid -n Sonic4Episode1.Android
@@ -42,18 +42,22 @@ jobs:
           cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
         fi
 
-        # تعطيل فحص انتهاء الدعم (EOL) مباشرة داخل ملف مشروع الأندرويد لمنع إيقاف البناء بواسطة .NET 11
+        # تعديل إطار العمل مباشرة في مشروع الأندرويد ليكون net8.0-android مع حقن خصائص تعطيل فحص EOL
         python3 -c "
         path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
         with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # حقن خاصية إيقاف التحقق داخل PropertyGroup الأولى
+        # استبدال net9.0-android أو أي إطار آخر بـ net8.0-android المتوافق مع .NET 8
+        content = content.replace('<TargetFramework>net9.0-android</TargetFramework>', '<TargetFramework>net8.0-android</TargetFramework>')
+        content = content.replace('<TargetFrameworks>net9.0-android</TargetFrameworks>', '<TargetFrameworks>net8.0-android</TargetFrameworks>')
+        
+        # حقن خصائص إيقاف التحقق من انتهاء الدعم داخل PropertyGroup
         content = content.replace('<PropertyGroup>', '<PropertyGroup>\n    <CheckEolTargetFramework>false</CheckEolTargetFramework>\n    <SuppressOutOfSupportTargetFrameworkError>true</SuppressOutOfSupportTargetFrameworkError>')
         
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print('Successfully disabled EOL checks in project.')
+        print('Forced net8.0-android and disabled EOL checks successfully.')
         " || true
 
     - name: Restore and Build APK
