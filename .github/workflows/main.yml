@@ -36,11 +36,27 @@ jobs:
         # إنشاء مشروع الأندرويد
         dotnet new mgandroid -n Sonic4Episode1.Android
 
-        # إضافة net9.0-android لمشروع اللعبة الأساسي ليتوافق مع مشروع الأندرويد
-        # سنقوم بتعديل ملف Sonic4Episode1.csproj ليدعم TargetFrameworks متعددة
-        sed -i 's/<TargetFramework>.*<\/TargetFramework>/<TargetFrameworks>netstandard2.1;net9.0-android<\/TargetFrameworks>/g' Sonic4Episode1/Sonic4Episode1.csproj || true
+        # استخدام بايثون أو سكربت بسيط لتحديث ملف Sonic4Episode1.csproj ليدعم net9.0-android بصمان تام
+        python3 -c "
+        import xml.etree.ElementTree as ET
+        ET.register_namespace('', 'http://schemas.microsoft.com/developer/msbuild/2003')
+        tree = ET.parse('Sonic4Episode1/Sonic4Episode1.csproj')
+        root = tree.getroot()
+        for prop_group in root.findall('{http://schemas.microsoft.com/developer/msbuild/2003}PropertyGroup'):
+            tf = prop_group.find('{http://schemas.microsoft.com/developer/msbuild/2003}TargetFramework')
+            tfs = prop_group.find('{http://schemas.microsoft.com/developer/msbuild/2003}TargetFrameworks')
+            if tf is not None:
+                tf.tag = 'TargetFrameworks'
+                tf.text = tf.text + ';net9.0-android'
+                break
+            elif tfs is not None:
+                if 'net9.0-android' not in tfs.text:
+                    tfs.text += ';net9.0-android'
+                break
+        tree.write('Sonic4Episode1/Sonic4Episode1.csproj', encoding='utf-8', xml_declaration=True)
+        " || true
 
-        # ربط المشروعين
+        # ربط المشروعين بعد التعديل
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
