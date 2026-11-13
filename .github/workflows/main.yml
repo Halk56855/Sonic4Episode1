@@ -21,10 +21,20 @@ jobs:
       run: |
         git submodule update --init --recursive || true
 
+    - name: Create global.json to lock .NET 8 SDK
+      run: |
+        echo '{
+          "sdk": {
+            "version": "8.0.400",
+            "rollForward": "latestPatch"
+          }
+        }' > global.json
+
     - name: Setup .NET 8 SDK
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+        global-json-file: 'global.json'
 
     - name: Install .NET Android Workload & MonoGame Templates
       run: |
@@ -42,22 +52,19 @@ jobs:
           cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
         fi
 
-        # تعديل إطار العمل مباشرة في مشروع الأندرويد ليكون net8.0-android مع حقن خصائص تعطيل فحص EOL
+        # تعديل إطار العمل إلى net8.0-android وحقن خصائص تعطيل فحص EOL نهائياً
         python3 -c "
         path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
         with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # استبدال net9.0-android أو أي إطار آخر بـ net8.0-android المتوافق مع .NET 8
         content = content.replace('<TargetFramework>net9.0-android</TargetFramework>', '<TargetFramework>net8.0-android</TargetFramework>')
         content = content.replace('<TargetFrameworks>net9.0-android</TargetFrameworks>', '<TargetFrameworks>net8.0-android</TargetFrameworks>')
-        
-        # حقن خصائص إيقاف التحقق من انتهاء الدعم داخل PropertyGroup
         content = content.replace('<PropertyGroup>', '<PropertyGroup>\n    <CheckEolTargetFramework>false</CheckEolTargetFramework>\n    <SuppressOutOfSupportTargetFrameworkError>true</SuppressOutOfSupportTargetFrameworkError>')
         
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print('Forced net8.0-android and disabled EOL checks successfully.')
+        print('Successfully locked framework and disabled EOL checks.')
         " || true
 
     - name: Restore and Build APK
