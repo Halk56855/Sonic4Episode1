@@ -41,10 +41,10 @@ jobs:
         dotnet workload install android --skip-manifest-update
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Android Project & Reference Game Correctly
+    - name: Create Android Project, Fix Frameworks and Reference
       run: |
-        # إنشاء مشروع أندرويد نظيف ومنفصل
-        dotnet new mgandroid -n Sonic4Episode1.Android
+        # إنشاء مشروع أندرويد بدون استعادة فورية لتفادي خطأ منصة أندرويد
+        dotnet new mgandroid -n Sonic4Episode1.Android --no-restore
 
         # تعديل إطار العمل في مشروع الأندرويد ليكون net8.0-android وحقن إيقاف فحص EOL
         python3 -c "
@@ -73,7 +73,7 @@ jobs:
             f.write(content)
         " || true
 
-        # ربط المشروعين
+        # ربط المشروعين بعد تعديل الإطارات بنجاح
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
