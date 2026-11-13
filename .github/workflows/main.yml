@@ -41,18 +41,12 @@ jobs:
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Unified Android Project & Force net8.0-android
+    - name: Create Android Project & Reference Game Correctly
       run: |
-        # إنشاء مشروع أندرويد جديد
+        # إنشاء مشروع أندرويد نظيف ومنفصل
         dotnet new mgandroid -n Sonic4Episode1.Android
 
-        # نسخ ملفات الكود والمحتوى إلى داخل مشروع الأندرويد
-        cp -r Sonic4Episode1/*.cs Sonic4Episode1.Android/ || true
-        if [ -d "Sonic4Episode1/Content" ]; then
-          cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
-        fi
-
-        # تعديل إطار العمل إلى net8.0-android وحقن خصائص تعطيل فحص EOL نهائياً
+        # تعديل إطار العمل في مشروع الأندرويد ليكون net8.0-android وحقن إيقاف فحص EOL
         python3 -c "
         path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
         with open(path, 'r', encoding='utf-8') as f:
@@ -64,8 +58,23 @@ jobs:
         
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print('Successfully locked framework and disabled EOL checks.')
         " || true
+
+        # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 لكي يقبله الأندرويد كمرجع دون مشاكل تضارب
+        python3 -c "
+        path = 'Sonic4Episode1/Sonic4Episode1.csproj'
+        with open(path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        import re
+        content = re.sub(r'<TargetFrameworks?>.*?</TargetFrameworks?>', '<TargetFramework>netstandard2.0</TargetFramework>', content, flags=re.DOTALL)
+        
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        " || true
+
+        # ربط مشروع الأندرويد بمشروع اللعبة الأساسي سليماً بكافة تبعاته
+        dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
       run: |
