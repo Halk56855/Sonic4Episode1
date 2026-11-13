@@ -40,7 +40,7 @@ jobs:
       run: |
         dotnet workload install android --skip-manifest-update
 
-    - name: Create Android Project Manually & Reference Game
+    - name: Create Android Project, Manifest & Reference Game
       run: |
         # إنشاء مجلد مشروع الأندرويد
         mkdir -p Sonic4Episode1.Android
@@ -65,6 +65,15 @@ jobs:
             <ProjectReference Include="..\Sonic4Episode1\Sonic4Episode1.csproj" />
           </ItemGroup>
         </Project>
+        EOF
+
+        # إنشاء ملف AndroidManifest.xml الأساسي لتجاوز خطأ XA1018
+        cat << 'EOF' > Sonic4Episode1.Android/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application android:allowBackup="true" android:label="Sonic 4 Episode I" android:supportsRtl="true">
+            </application>
+        </manifest>
         EOF
 
         # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 ليتوافق تماماً مع الأندرويد
