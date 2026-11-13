@@ -21,10 +21,10 @@ jobs:
       run: |
         git submodule update --init --recursive || true
 
-    - name: Setup .NET SDK
+    - name: Setup .NET 8 SDK
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '10.0.x'
+        dotnet-version: '8.0.x'
 
     - name: Install .NET Android Workload & MonoGame Templates
       run: |
@@ -42,22 +42,21 @@ jobs:
           cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
         fi
 
-        # تجاوز منع إطارات العمل المنتهية لدعم البناء تحت .NET 10/11
+        # ضبط المشروع ليستهدف net8.0-android ليتوافق تماماً مع .NET 8 SDK
         python3 -c "
         path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
         with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # تعطيل فحص انتهاء دعم الإطار المستهدف وإضافته صراحة لمنع الخطأ
-        content = content.replace('net9.0-android', 'net8.0-android')
+        content = content.replace('net9.0-android', 'net8.0-android').replace('net10.0-android', 'net8.0-android')
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print('Updated Android project framework.')
+        print('Forced net8.0-android for .NET 8 SDK compatibility.')
         " || true
 
     - name: Restore and Build APK
       run: |
-        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk -p:CheckEolTargetFramework=false -p:CheckNotAllowedTargetFrameworks=false
+        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
