@@ -31,9 +31,16 @@ jobs:
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create & Configure Android Project
+    - name: Create Android Project & Fix Framework Compatibility
       run: |
+        # إنشاء مشروع الأندرويد
         dotnet new mgandroid -n Sonic4Episode1.Android
+
+        # إضافة net9.0-android لمشروع اللعبة الأساسي ليتوافق مع مشروع الأندرويد
+        # سنقوم بتعديل ملف Sonic4Episode1.csproj ليدعم TargetFrameworks متعددة
+        sed -i 's/<TargetFramework>.*<\/TargetFramework>/<TargetFrameworks>netstandard2.1;net9.0-android<\/TargetFrameworks>/g' Sonic4Episode1/Sonic4Episode1.csproj || true
+
+        # ربط المشروعين
         dotnet add Sonic4Episode1.Android/Sonic4Episode1.Android.csproj reference Sonic4Episode1/Sonic4Episode1.csproj
 
     - name: Restore and Build APK
