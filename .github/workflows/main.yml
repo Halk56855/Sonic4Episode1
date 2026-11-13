@@ -31,7 +31,7 @@ jobs:
         dotnet workload install android
         dotnet new install MonoGame.Templates.CSharp
 
-    - name: Create Unified Android Project & Fix Frameworks
+    - name: Create Unified Android Project & Disable EOL Check
       run: |
         # إنشاء مشروع أندرويد جديد
         dotnet new mgandroid -n Sonic4Episode1.Android
@@ -42,21 +42,23 @@ jobs:
           cp -r Sonic4Episode1/Content Sonic4Episode1.Android/
         fi
 
-        # ضبط المشروع ليستهدف net8.0-android ليتوافق تماماً مع .NET 8 SDK
+        # تعطيل فحص انتهاء الدعم (EOL) مباشرة داخل ملف مشروع الأندرويد لمنع إيقاف البناء بواسطة .NET 11
         python3 -c "
         path = 'Sonic4Episode1.Android/Sonic4Episode1.Android.csproj'
         with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        content = content.replace('net9.0-android', 'net8.0-android').replace('net10.0-android', 'net8.0-android')
+        # حقن خاصية إيقاف التحقق داخل PropertyGroup الأولى
+        content = content.replace('<PropertyGroup>', '<PropertyGroup>\n    <CheckEolTargetFramework>false</CheckEolTargetFramework>\n    <SuppressOutOfSupportTargetFrameworkError>true</SuppressOutOfSupportTargetFrameworkError>')
+        
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
-        print('Forced net8.0-android for .NET 8 SDK compatibility.')
+        print('Successfully disabled EOL checks in project.')
         " || true
 
     - name: Restore and Build APK
       run: |
-        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk
+        dotnet publish Sonic4Episode1.Android/Sonic4Episode1.Android.csproj -c Release -p:AndroidPackageFormat=apk -p:CheckEolTargetFramework=false -p:SuppressOutOfSupportTargetFrameworkError=true
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
