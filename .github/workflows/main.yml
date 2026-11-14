@@ -40,7 +40,7 @@ jobs:
       run: |
         dotnet workload install android --skip-manifest-update
 
-    - name: Create Android Project, Manifest & Reference Game
+    - name: Create Android Project, Manifest & Force netstandard2.0 on Game
       run: |
         # إنشاء مجلد مشروع الأندرويد
         mkdir -p Sonic4Episode1.Android
@@ -67,7 +67,7 @@ jobs:
         </Project>
         EOF
 
-        # إنشاء ملف AndroidManifest.xml الأساسي لتجاوز خطأ XA1018
+        # إنشاء ملف AndroidManifest.xml الأساسي
         cat << 'EOF' > Sonic4Episode1.Android/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -76,18 +76,31 @@ jobs:
         </manifest>
         EOF
 
-        # تحويل مشروع اللعبة الأساسي ليدعم netstandard2.0 ليتوافق تماماً مع الأندرويد
+        # تنظيف وتحويل مشروع اللعبة الأساسي سطرًا بسطر لإزالة أي أثر لـ v4.7.2 وإجبار netstandard2.0
         python3 -c "
         path = 'Sonic4Episode1/Sonic4Episode1.csproj'
         with open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
+            lines = f.readlines()
         
-        import re
-        content = re.sub(r'<TargetFrameworks?>.*?</TargetFrameworks?>', '<TargetFramework>netstandard2.0</TargetFramework>', content, flags=re.DOTALL)
-        
+        new_lines = []
+        target_added = False
+
+        for line in lines:
+            # تجاهل أي سطر يحتوي على إطارات عمل قديمة
+            if any(k in line for k in ['TargetFrameworkVersion', '<TargetFramework>', '<TargetFrameworks>']):
+                continue
+            
+            new_lines.append(line)
+            
+            # حقن netstandard2.0 في أول PropertyGroup تظهر
+            if '<PropertyGroup>' in line and not target_added:
+                new_lines.append('    <TargetFramework>netstandard2.0</TargetFramework>\n')
+                target_added = True
+
         with open(path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        " || true
+            f.writelines(new_lines)
+        print('Successfully purged old frameworks and set netstandard2.0')
+        "
 
     - name: Restore and Build APK
       run: |
